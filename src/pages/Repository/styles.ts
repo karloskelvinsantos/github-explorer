@@ -121,3 +121,14 @@ export const Issues = styled.div`
     }
   }
 `;
+
+export const Loading = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    display: block;
+    margin-top: 10%;
+  }
+`;

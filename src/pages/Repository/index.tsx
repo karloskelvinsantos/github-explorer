@@ -4,8 +4,9 @@ import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import api from '../../service/api';
 
 import logoImg from '../../assets/logo.svg';
+import loadingGif from '../../assets/loading.gif';
 
-import { Header, RepositoryInfo, Issues } from './styles';
+import { Header, RepositoryInfo, Issues, Loading } from './styles';
 
 interface RepositoryParams {
   repository: string;
@@ -25,6 +26,7 @@ interface RepositoryDTO {
 interface IssueDTO {
   id: string;
   title: string;
+  html_url: string;
   user: {
     login: string;
   };
@@ -45,7 +47,13 @@ const Repository: React.FC = () => {
         },
       );
 
-      setRepository(repositoryStored);
+      if (repositoryStored) {
+        setRepository(repositoryStored);
+      } else {
+        api.get(`/repos/${params.repository}`).then(response => {
+          setRepository(response.data);
+        });
+      }
     }
 
     api.get<IssueDTO[]>(`/repos/${params.repository}/issues`).then(response => {
@@ -88,17 +96,28 @@ const Repository: React.FC = () => {
         </ul>
       </RepositoryInfo>
 
-      <Issues>
-        {issues.map(issue => (
-          <Link key={issue.id} to="/">
-            <div>
-              <strong>{issue.title}</strong>
-              <p>{issue.user.login}</p>
-            </div>
-            <FiChevronRight size={20} />
-          </Link>
-        ))}
-      </Issues>
+      {issues.length !== 0 ? (
+        <Issues>
+          {issues.map(issue => (
+            <a
+              key={issue.id}
+              href={issue.html_url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <div>
+                <strong>{issue.title}</strong>
+                <p>{issue.user.login}</p>
+              </div>
+              <FiChevronRight size={20} />
+            </a>
+          ))}
+        </Issues>
+      ) : (
+        <Loading>
+          <img src={loadingGif} alt="loading" width="80px" height="80px" />
+        </Loading>
+      )}
     </>
   );
 };
