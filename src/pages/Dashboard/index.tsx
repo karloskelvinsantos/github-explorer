@@ -1,11 +1,12 @@
 import React, { useState, useEffect, FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { FiChevronRight } from 'react-icons/fi';
 
 import api from '../../service/api';
 
 import logoImg from '../../assets/logo.svg';
 
-import { Title, Form, Repositories } from './styles';
+import { Title, Form, Repositories, Error } from './styles';
 
 interface Repository {
   full_name: string;
@@ -17,6 +18,7 @@ interface Repository {
 
 const Dashboard: React.FC = () => {
   const [newRepo, setNewRepo] = useState('');
+  const [erros, setErros] = useState('');
   const [repositories, setRepositories] = useState<Repository[]>(() => {
     const reposStored = localStorage.getItem('@GithubExplorer:repositories');
 
@@ -39,13 +41,23 @@ const Dashboard: React.FC = () => {
   ): Promise<void> {
     event.preventDefault();
 
-    const response = await api.get<Repository>(`/repos/${newRepo}`);
+    if (!newRepo) {
+      setErros('Preencha o campo de pesquisa');
+      return;
+    }
 
-    const repository = response.data;
+    try {
+      const response = await api.get<Repository>(`/repos/${newRepo}`);
 
-    if (repository) {
-      setRepositories([...repositories, repository]);
-      setNewRepo('');
+      const repository = response.data;
+
+      if (repository) {
+        setRepositories([...repositories, repository]);
+        setNewRepo('');
+        setErros('');
+      }
+    } catch (error) {
+      setErros('Repositório não encontrado!');
     }
   }
 
@@ -55,7 +67,7 @@ const Dashboard: React.FC = () => {
 
       <Title>Explore repositórios no Github</Title>
 
-      <Form onSubmit={handleSubmitForm}>
+      <Form hasError={Boolean(erros)} onSubmit={handleSubmitForm}>
         <input
           value={newRepo}
           onChange={e => setNewRepo(e.target.value)}
@@ -65,16 +77,18 @@ const Dashboard: React.FC = () => {
         <button type="submit">Pesquisar</button>
       </Form>
 
+      {erros && <Error>{erros}</Error>}
+
       <Repositories>
         {repositories.map(repo => (
-          <a key={repo.full_name} href="teste">
+          <Link key={repo.full_name} to={`/repositories/${repo.full_name}`}>
             <img src={repo.owner.avatar_url} alt="repository" />
             <div>
               <strong>{repo.full_name}</strong>
               <p>{repo.description}</p>
             </div>
             <FiChevronRight size={20} />
-          </a>
+          </Link>
         ))}
       </Repositories>
     </>
